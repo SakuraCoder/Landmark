@@ -28,16 +28,12 @@ class PatchSemanticLayerTest : public MultiDeviceTest<TypeParam> {
   PatchSemanticLayerTest()
       : blob_bottom_gt_(new Blob<Dtype>(2, 5, 2, 1)),
         blob_bottom_pre_(new Blob<Dtype>(2, 5, 2, 1 )),
-        blob_bottom_feature_(new Blob<Dtype>(2, 2, 20, 20 )),
-        blob_top_(new Blob<Dtype>(2, 21, 3, 1)),
+        blob_bottom_feature1_(new Blob<Dtype>(2, 2, 18, 18 )),
+        blob_bottom_feature2_(new Blob<Dtype>(2, 2, 8, 8 )),
+        blob_top_(new Blob<Dtype>(2, 21, 3, 1))
 
         {
     // fill the values
-    FillerParameter gaussian_filler_param;
-    GaussianFiller<Dtype> gaussian_filler(gaussian_filler_param);
-    
-    gaussian_filler.Fill(this->blob_bottom_data_);
-    blob_bottom_vec_.push_back(blob_bottom_data_);
 
     FillerParameter uniform_filler_param;
     uniform_filler_param.set_min(0);
@@ -48,8 +44,9 @@ class PatchSemanticLayerTest : public MultiDeviceTest<TypeParam> {
 
     uniform_filler_param.set_min(-10);
     uniform_filler_param.set_max(10);
-    UniformFiller<Dtype> uniform_filler(uniform_filler_param);
-    uniform_filler.Fill(this->blob_bottom_feature_);
+    UniformFiller<Dtype> feature_filler(uniform_filler_param);
+    feature_filler.Fill(this->blob_bottom_feature1_);
+    feature_filler.Fill(this->blob_bottom_feature2_);
     // make some change to label
     /*for (int i = 0; i < 2; ++i){  // batch 
       for (int j = 0; j < 2 * 2; ++j){  // side_ * side_      
@@ -58,22 +55,24 @@ class PatchSemanticLayerTest : public MultiDeviceTest<TypeParam> {
     }*/
     blob_bottom_vec_.push_back(blob_bottom_gt_);
     blob_bottom_vec_.push_back(blob_bottom_pre_);
-    blob_bottom_vec_.push_back(blob_bottom_feature_);
-
+    blob_bottom_vec_.push_back(blob_bottom_feature1_);
+    blob_bottom_vec_.push_back(blob_bottom_feature2_);
     blob_top_vec_.push_back(blob_top_);
   }
   
   virtual ~PatchSemanticLayerTest() {
     delete blob_bottom_gt_;
     delete blob_bottom_pre_;
-    delete blob_bottom_feature_;
+    delete blob_bottom_feature1_;
+    delete blob_bottom_feature2_;
     delete blob_top_;
   } 
 
   void TestForwardSpecifiedExample(){
     Blob<Dtype>* blob_bottom_gt = new Blob<Dtype>(2, 5, 2, 1);
     Blob<Dtype>* blob_bottom_pre = new Blob<Dtype>(2, 5, 2, 1);
-    Blob<Dtype>* blob_bottom_feature = new Blob<Dtype>(2, 2, 20, 20);
+    Blob<Dtype>* blob_bottom_feature1 = new Blob<Dtype>(2, 2, 18, 18);
+    Blob<Dtype>* blob_bottom_feature2 = new Blob<Dtype>(2, 2, 8, 8);
     Blob<Dtype>* blob_top = new Blob<Dtype>();
     
     vector<Blob<Dtype>*> blob_bottom_vec;
@@ -104,93 +103,37 @@ class PatchSemanticLayerTest : public MultiDeviceTest<TypeParam> {
                        Dtype(1), Dtype(3),
                        Dtype(2), Dtype(-3),
                        Dtype(3), Dtype(-4)};
-    Dtype feature_data[1600] = {
-      Dtype(8), Dtype(3), Dtype(3), Dtype(5), Dtype(-8), Dtype(10), Dtype(0), Dtype(8), Dtype(-5), Dtype(10), Dtype(0), Dtype(3), Dtype(9), Dtype(-9), Dtype(5), Dtype(-1), Dtype(-6), Dtype(-9), Dtype(7), Dtype(-1), 
-      Dtype(7), Dtype(3), Dtype(4), Dtype(10), Dtype(-6), Dtype(6), Dtype(10), Dtype(9), Dtype(10), Dtype(-7), Dtype(9), Dtype(2), Dtype(0), Dtype(6), Dtype(7), Dtype(-5), Dtype(-3), Dtype(3), Dtype(-3), Dtype(4), 
-      Dtype(-10), Dtype(-5), Dtype(7), Dtype(2), Dtype(-1), Dtype(5), Dtype(-7), Dtype(-7), Dtype(2), Dtype(-9), Dtype(-5), Dtype(10), Dtype(7), Dtype(2), Dtype(8), Dtype(-4), Dtype(-2), Dtype(-10), Dtype(3), Dtype(4), 
-      Dtype(-7), Dtype(-4), Dtype(10), Dtype(-7), Dtype(2), Dtype(1), Dtype(-6), Dtype(3), Dtype(4), Dtype(2), Dtype(-3), Dtype(4), Dtype(10), Dtype(-7), Dtype(-2), Dtype(10), Dtype(-4), Dtype(-7), Dtype(-10), Dtype(4), 
-      Dtype(-3), Dtype(-7), Dtype(3), Dtype(3), Dtype(-9), Dtype(-6), Dtype(-6), Dtype(0), Dtype(9), Dtype(-1), Dtype(-2), Dtype(3), Dtype(-3), Dtype(-3), Dtype(-10), Dtype(0), Dtype(-6), Dtype(5), Dtype(5), Dtype(-9), 
-      Dtype(-8), Dtype(5), Dtype(-9), Dtype(-4), Dtype(1), Dtype(-3), Dtype(-7), Dtype(2), Dtype(1), Dtype(2), Dtype(7), Dtype(-7), Dtype(-7), Dtype(-1), Dtype(-8), Dtype(9), Dtype(2), Dtype(2), Dtype(-4), Dtype(-6), 
-      Dtype(0), Dtype(2), Dtype(-5), Dtype(-7), Dtype(-5), Dtype(5), Dtype(-8), Dtype(-5), Dtype(6), Dtype(-2), Dtype(5), Dtype(7), Dtype(2), Dtype(-3), Dtype(-6), Dtype(-3), Dtype(-1), Dtype(-1), Dtype(6), Dtype(5), 
-      Dtype(-10), Dtype(5), Dtype(-9), Dtype(1), Dtype(5), Dtype(9), Dtype(-2), Dtype(4), Dtype(-7), Dtype(6), Dtype(-4), Dtype(5), Dtype(7), Dtype(-6), Dtype(-9), Dtype(7), Dtype(-4), Dtype(1), Dtype(1), Dtype(1), 
-      Dtype(-7), Dtype(-6), Dtype(-9), Dtype(-9), Dtype(-7), Dtype(8), Dtype(3), Dtype(-1), Dtype(-2), Dtype(4), Dtype(0), Dtype(-10), Dtype(-9), Dtype(5), Dtype(-4), Dtype(-9), Dtype(1), Dtype(-9), Dtype(-7), Dtype(-8), 
-      Dtype(7), Dtype(9), Dtype(2), Dtype(2), Dtype(-1), Dtype(-3), Dtype(-7), Dtype(-6), Dtype(6), Dtype(3), Dtype(-7), Dtype(-1), Dtype(9), Dtype(9), Dtype(-4), Dtype(1), Dtype(-3), Dtype(-6), Dtype(-7), Dtype(10), 
-      Dtype(-8), Dtype(10), Dtype(8), Dtype(-4), Dtype(6), Dtype(-6), Dtype(7), Dtype(-2), Dtype(-2), Dtype(7), Dtype(-8), Dtype(9), Dtype(3), Dtype(2), Dtype(-10), Dtype(3), Dtype(10), Dtype(5), Dtype(3), Dtype(0), 
-      Dtype(-6), Dtype(5), Dtype(7), Dtype(-9), Dtype(10), Dtype(-10), Dtype(-4), Dtype(-7), Dtype(-6), Dtype(2), Dtype(8), Dtype(7), Dtype(-7), Dtype(-10), Dtype(3), Dtype(-3), Dtype(6), Dtype(2), Dtype(-1), Dtype(3), 
-      Dtype(6), Dtype(10), Dtype(9), Dtype(-1), Dtype(-4), Dtype(-2), Dtype(-5), Dtype(9), Dtype(0), Dtype(6), Dtype(3), Dtype(-10), Dtype(-6), Dtype(-6), Dtype(-6), Dtype(-4), Dtype(2), Dtype(-10), Dtype(7), Dtype(10), 
-      Dtype(-4), Dtype(-1), Dtype(0), Dtype(6), Dtype(-3), Dtype(1), Dtype(0), Dtype(9), Dtype(0), Dtype(7), Dtype(5), Dtype(2), Dtype(7), Dtype(-2), Dtype(-8), Dtype(-7), Dtype(5), Dtype(-5), Dtype(-1), Dtype(-4), 
-      Dtype(9), Dtype(-5), Dtype(-10), Dtype(-1), Dtype(-10), Dtype(6), Dtype(2), Dtype(8), Dtype(-2), Dtype(-6), Dtype(5), Dtype(10), Dtype(-2), Dtype(10), Dtype(5), Dtype(-8), Dtype(-6), Dtype(9), Dtype(-9), Dtype(-9), 
-      Dtype(-6), Dtype(7), Dtype(8), Dtype(-2), Dtype(-3), Dtype(5), Dtype(-2), Dtype(5), Dtype(9), Dtype(1), Dtype(2), Dtype(7), Dtype(-4), Dtype(-3), Dtype(7), Dtype(2), Dtype(10), Dtype(-10), Dtype(-5), Dtype(2), 
-      Dtype(10), Dtype(-3), Dtype(-8), Dtype(4), Dtype(2), Dtype(-1), Dtype(-1), Dtype(10), Dtype(6), Dtype(4), Dtype(-5), Dtype(-8), Dtype(-6), Dtype(-8), Dtype(6), Dtype(7), Dtype(3), Dtype(1), Dtype(-4), Dtype(9), 
-      Dtype(-4), Dtype(-8), Dtype(-10), Dtype(-2), Dtype(-1), Dtype(3), Dtype(-6), Dtype(8), Dtype(2), Dtype(-8), Dtype(-9), Dtype(-2), Dtype(8), Dtype(4), Dtype(-4), Dtype(9), Dtype(3), Dtype(5), Dtype(9), Dtype(5), 
-      Dtype(-6), Dtype(6), Dtype(5), Dtype(-2), Dtype(-2), Dtype(-6), Dtype(-9), Dtype(-8), Dtype(5), Dtype(0), Dtype(-10), Dtype(-10), Dtype(0), Dtype(2), Dtype(5), Dtype(-4), Dtype(-8), Dtype(9), Dtype(-9), Dtype(5), 
-      Dtype(9), Dtype(-7), Dtype(-1), Dtype(0), Dtype(7), Dtype(-8), Dtype(0), Dtype(2), Dtype(-1), Dtype(-2), Dtype(6), Dtype(6), Dtype(-7), Dtype(4), Dtype(-5), Dtype(9), Dtype(3), Dtype(8), Dtype(-6), Dtype(-3), 
-
-      Dtype(-2), Dtype(-10), Dtype(0), Dtype(-6), Dtype(-10), Dtype(-7), Dtype(1), Dtype(-1), Dtype(2), Dtype(-9), Dtype(8), Dtype(-1), Dtype(2), Dtype(-7), Dtype(9), Dtype(-2), Dtype(6), Dtype(0), Dtype(-5), Dtype(0), 
-      Dtype(7), Dtype(3), Dtype(-8), Dtype(4), Dtype(1), Dtype(-10), Dtype(-4), Dtype(6), Dtype(-2), Dtype(4), Dtype(-3), Dtype(-8), Dtype(7), Dtype(-9), Dtype(-1), Dtype(10), Dtype(-9), Dtype(10), Dtype(2), Dtype(-7), 
-      Dtype(4), Dtype(8), Dtype(6), Dtype(8), Dtype(6), Dtype(3), Dtype(0), Dtype(-8), Dtype(8), Dtype(7), Dtype(-10), Dtype(-7), Dtype(1), Dtype(4), Dtype(10), Dtype(6), Dtype(5), Dtype(1), Dtype(-3), Dtype(2), 
-      Dtype(2), Dtype(-8), Dtype(-10), Dtype(-7), Dtype(1), Dtype(-1), Dtype(-7), Dtype(-7), Dtype(-3), Dtype(-4), Dtype(-6), Dtype(6), Dtype(10), Dtype(10), Dtype(-5), Dtype(10), Dtype(4), Dtype(10), Dtype(-7), Dtype(5), 
-      Dtype(-8), Dtype(8), Dtype(-9), Dtype(10), Dtype(2), Dtype(-7), Dtype(-10), Dtype(-9), Dtype(4), Dtype(2), Dtype(-3), Dtype(9), Dtype(-2), Dtype(2), Dtype(1), Dtype(7), Dtype(2), Dtype(0), Dtype(0), Dtype(6), 
-      Dtype(1), Dtype(0), Dtype(8), Dtype(-5), Dtype(9), Dtype(-4), Dtype(-8), Dtype(-2), Dtype(-5), Dtype(-1), Dtype(7), Dtype(3), Dtype(0), Dtype(-10), Dtype(-2), Dtype(2), Dtype(-3), Dtype(10), Dtype(-8), Dtype(9), 
-      Dtype(3), Dtype(-8), Dtype(5), Dtype(-1), Dtype(4), Dtype(2), Dtype(1), Dtype(-6), Dtype(5), Dtype(-6), Dtype(3), Dtype(-2), Dtype(1), Dtype(3), Dtype(-7), Dtype(-10), Dtype(-8), Dtype(-3), Dtype(5), Dtype(7), 
-      Dtype(0), Dtype(4), Dtype(9), Dtype(8), Dtype(-8), Dtype(4), Dtype(6), Dtype(9), Dtype(-1), Dtype(-5), Dtype(1), Dtype(-4), Dtype(3), Dtype(8), Dtype(-4), Dtype(1), Dtype(7), Dtype(2), Dtype(2), Dtype(-6), 
-      Dtype(-1), Dtype(-2), Dtype(1), Dtype(5), Dtype(5), Dtype(3), Dtype(-5), Dtype(-7), Dtype(-5), Dtype(-10), Dtype(-5), Dtype(-9), Dtype(7), Dtype(-1), Dtype(10), Dtype(4), Dtype(7), Dtype(9), Dtype(-4), Dtype(-9), 
-      Dtype(3), Dtype(8), Dtype(3), Dtype(-3), Dtype(8), Dtype(6), Dtype(8), Dtype(9), Dtype(-10), Dtype(-10), Dtype(4), Dtype(-10), Dtype(-5), Dtype(-4), Dtype(9), Dtype(-10), Dtype(-3), Dtype(1), Dtype(4), Dtype(8), 
-      Dtype(-2), Dtype(9), Dtype(-4), Dtype(0), Dtype(-7), Dtype(-1), Dtype(1), Dtype(9), Dtype(4), Dtype(9), Dtype(5), Dtype(1), Dtype(-5), Dtype(1), Dtype(-2), Dtype(3), Dtype(-8), Dtype(6), Dtype(7), Dtype(-7), 
-      Dtype(8), Dtype(8), Dtype(-9), Dtype(-7), Dtype(-9), Dtype(-3), Dtype(3), Dtype(10), Dtype(-2), Dtype(-9), Dtype(0), Dtype(6), Dtype(6), Dtype(8), Dtype(10), Dtype(-8), Dtype(10), Dtype(-10), Dtype(6), Dtype(6), 
-      Dtype(-1), Dtype(-6), Dtype(-8), Dtype(-9), Dtype(-3), Dtype(8), Dtype(-3), Dtype(-10), Dtype(9), Dtype(10), Dtype(1), Dtype(-2), Dtype(-9), Dtype(-7), Dtype(7), Dtype(9), Dtype(-10), Dtype(2), Dtype(-10), Dtype(-1), 
-      Dtype(-4), Dtype(-7), Dtype(-7), Dtype(1), Dtype(5), Dtype(-7), Dtype(1), Dtype(1), Dtype(-6), Dtype(5), Dtype(4), Dtype(7), Dtype(6), Dtype(0), Dtype(-2), Dtype(5), Dtype(9), Dtype(-8), Dtype(-4), Dtype(-3), 
-      Dtype(-1), Dtype(8), Dtype(9), Dtype(-3), Dtype(-10), Dtype(5), Dtype(-10), Dtype(6), Dtype(1), Dtype(4), Dtype(-3), Dtype(-6), Dtype(-4), Dtype(8), Dtype(-2), Dtype(-8), Dtype(-1), Dtype(-9), Dtype(5), Dtype(-7), 
-      Dtype(-4), Dtype(7), Dtype(9), Dtype(2), Dtype(5), Dtype(10), Dtype(-6), Dtype(-8), Dtype(7), Dtype(6), Dtype(2), Dtype(-10), Dtype(4), Dtype(-2), Dtype(9), Dtype(7), Dtype(-7), Dtype(5), Dtype(8), Dtype(6), 
-      Dtype(-3), Dtype(-5), Dtype(10), Dtype(-3), Dtype(8), Dtype(-5), Dtype(9), Dtype(-1), Dtype(-1), Dtype(-2), Dtype(4), Dtype(9), Dtype(3), Dtype(8), Dtype(9), Dtype(9), Dtype(-8), Dtype(-2), Dtype(10), Dtype(-6), 
-      Dtype(9), Dtype(5), Dtype(4), Dtype(10), Dtype(-4), Dtype(-6), Dtype(-3), Dtype(1), Dtype(-8), Dtype(-6), Dtype(-10), Dtype(-10), Dtype(1), Dtype(-9), Dtype(2), Dtype(0), Dtype(8), Dtype(-3), Dtype(7), Dtype(7), 
-      Dtype(-5), Dtype(1), Dtype(6), Dtype(0), Dtype(5), Dtype(1), Dtype(5), Dtype(5), Dtype(9), Dtype(6), Dtype(3), Dtype(-4), Dtype(-10), Dtype(-9), Dtype(-4), Dtype(-6), Dtype(-4), Dtype(0), Dtype(-9), Dtype(4), 
-      Dtype(-1), Dtype(7), Dtype(-1), Dtype(-10), Dtype(-7), Dtype(-6), Dtype(-5), Dtype(-9), Dtype(-7), Dtype(1), Dtype(-4), Dtype(-7), Dtype(-8), Dtype(1), Dtype(-4), Dtype(6), Dtype(-3), Dtype(9), Dtype(5), Dtype(10), 
-
-      Dtype(-5), Dtype(-9), Dtype(1), Dtype(-1), Dtype(1), Dtype(-4), Dtype(-3), Dtype(8), Dtype(-8), Dtype(-9), Dtype(7), Dtype(8), Dtype(10), Dtype(7), Dtype(2), Dtype(-2), Dtype(-8), Dtype(-5), Dtype(8), Dtype(-10), 
-      Dtype(3), Dtype(-3), Dtype(-5), Dtype(-9), Dtype(8), Dtype(-5), Dtype(-9), Dtype(-9), Dtype(7), Dtype(4), Dtype(5), Dtype(-8), Dtype(1), Dtype(-9), Dtype(-9), Dtype(10), Dtype(1), Dtype(-5), Dtype(3), Dtype(-10), 
-      Dtype(10), Dtype(5), Dtype(5), Dtype(-3), Dtype(5), Dtype(9), Dtype(-2), Dtype(4), Dtype(-7), Dtype(0), Dtype(-4), Dtype(-7), Dtype(4), Dtype(-3), Dtype(8), Dtype(5), Dtype(-6), Dtype(1), Dtype(-8), Dtype(2), 
-      Dtype(3), Dtype(-7), Dtype(-10), Dtype(8), Dtype(-1), Dtype(9), Dtype(-4), Dtype(-7), Dtype(5), Dtype(10), Dtype(-4), Dtype(10), Dtype(-1), Dtype(-1), Dtype(-1), Dtype(5), Dtype(-8), Dtype(-10), Dtype(6), Dtype(6), 
-      Dtype(-7), Dtype(6), Dtype(7), Dtype(-9), Dtype(8), Dtype(8), Dtype(0), Dtype(4), Dtype(5), Dtype(-8), Dtype(-7), Dtype(-1), Dtype(-10), Dtype(-8), Dtype(10), Dtype(-5), Dtype(-1), Dtype(-9), Dtype(2), Dtype(0), 
-      Dtype(0), Dtype(-6), Dtype(-4), Dtype(-7), Dtype(-2), Dtype(-6), Dtype(7), Dtype(5), Dtype(-10), Dtype(7), Dtype(1), Dtype(3), Dtype(-10), Dtype(9), Dtype(8), Dtype(1), Dtype(6), Dtype(4), Dtype(-9), Dtype(7), 
-      Dtype(7), Dtype(-10), Dtype(5), Dtype(3), Dtype(-8), Dtype(7), Dtype(0), Dtype(9), Dtype(3), Dtype(8), Dtype(5), Dtype(5), Dtype(-4), Dtype(5), Dtype(-3), Dtype(5), Dtype(-1), Dtype(-2), Dtype(-3), Dtype(2), 
-      Dtype(-2), Dtype(7), Dtype(7), Dtype(-6), Dtype(5), Dtype(-3), Dtype(10), Dtype(8), Dtype(-7), Dtype(10), Dtype(-1), Dtype(-8), Dtype(-2), Dtype(2), Dtype(5), Dtype(-10), Dtype(-5), Dtype(-1), Dtype(7), Dtype(-5), 
-      Dtype(-8), Dtype(-2), Dtype(-10), Dtype(-1), Dtype(2), Dtype(-7), Dtype(-6), Dtype(-8), Dtype(0), Dtype(10), Dtype(-9), Dtype(-5), Dtype(8), Dtype(-2), Dtype(-6), Dtype(6), Dtype(2), Dtype(0), Dtype(7), Dtype(-5), 
-      Dtype(-5), Dtype(-4), Dtype(0), Dtype(-1), Dtype(5), Dtype(6), Dtype(8), Dtype(-7), Dtype(-6), Dtype(-8), Dtype(6), Dtype(-3), Dtype(10), Dtype(2), Dtype(5), Dtype(-8), Dtype(6), Dtype(-6), Dtype(3), Dtype(8), 
-      Dtype(-2), Dtype(4), Dtype(6), Dtype(-7), Dtype(8), Dtype(-5), Dtype(-4), Dtype(-3), Dtype(5), Dtype(10), Dtype(-6), Dtype(-10), Dtype(-8), Dtype(-9), Dtype(-7), Dtype(1), Dtype(0), Dtype(-1), Dtype(0), Dtype(9), 
-      Dtype(3), Dtype(-8), Dtype(-8), Dtype(-1), Dtype(6), Dtype(1), Dtype(-8), Dtype(7), Dtype(-4), Dtype(-5), Dtype(6), Dtype(7), Dtype(-8), Dtype(-1), Dtype(-9), Dtype(9), Dtype(-1), Dtype(9), Dtype(8), Dtype(-3), 
-      Dtype(6), Dtype(-6), Dtype(10), Dtype(7), Dtype(-6), Dtype(-8), Dtype(-6), Dtype(-3), Dtype(-6), Dtype(9), Dtype(-9), Dtype(-7), Dtype(-6), Dtype(1), Dtype(-8), Dtype(3), Dtype(8), Dtype(-1), Dtype(-8), Dtype(6), 
-      Dtype(5), Dtype(8), Dtype(-4), Dtype(-4), Dtype(7), Dtype(10), Dtype(1), Dtype(6), Dtype(3), Dtype(8), Dtype(10), Dtype(4), Dtype(3), Dtype(0), Dtype(-6), Dtype(-7), Dtype(5), Dtype(-4), Dtype(-1), Dtype(-6), 
-      Dtype(4), Dtype(-1), Dtype(0), Dtype(1), Dtype(7), Dtype(3), Dtype(6), Dtype(3), Dtype(-10), Dtype(-10), Dtype(7), Dtype(9), Dtype(1), Dtype(-8), Dtype(-3), Dtype(9), Dtype(6), Dtype(2), Dtype(6), Dtype(8), 
-      Dtype(9), Dtype(10), Dtype(1), Dtype(-6), Dtype(-6), Dtype(8), Dtype(7), Dtype(-1), Dtype(-3), Dtype(6), Dtype(4), Dtype(3), Dtype(0), Dtype(-9), Dtype(2), Dtype(4), Dtype(2), Dtype(9), Dtype(-7), Dtype(9), 
-      Dtype(-5), Dtype(-7), Dtype(5), Dtype(-10), Dtype(2), Dtype(5), Dtype(-7), Dtype(-3), Dtype(-2), Dtype(-8), Dtype(-5), Dtype(1), Dtype(-10), Dtype(6), Dtype(-2), Dtype(-3), Dtype(-9), Dtype(6), Dtype(0), Dtype(4), 
-      Dtype(7), Dtype(-5), Dtype(-4), Dtype(4), Dtype(-6), Dtype(-7), Dtype(4), Dtype(8), Dtype(2), Dtype(-4), Dtype(-4), Dtype(7), Dtype(-10), Dtype(8), Dtype(1), Dtype(10), Dtype(2), Dtype(10), Dtype(2), Dtype(6), 
-      Dtype(10), Dtype(-8), Dtype(-8), Dtype(-8), Dtype(9), Dtype(-8), Dtype(-1), Dtype(-5), Dtype(-3), Dtype(-8), Dtype(-4), Dtype(-4), Dtype(-5), Dtype(8), Dtype(1), Dtype(0), Dtype(-8), Dtype(0), Dtype(-6), Dtype(1), 
-      Dtype(10), Dtype(5), Dtype(10), Dtype(3), Dtype(-8), Dtype(2), Dtype(-6), Dtype(4), Dtype(0), Dtype(5), Dtype(-4), Dtype(6), Dtype(5), Dtype(-7), Dtype(-5), Dtype(-7), Dtype(-4), Dtype(-5), Dtype(-10), Dtype(-3), 
-
-      Dtype(-4), Dtype(4), Dtype(3), Dtype(8), Dtype(-2), Dtype(-8), Dtype(1), Dtype(3), Dtype(-4), Dtype(5), Dtype(-7), Dtype(2), Dtype(-5), Dtype(-8), Dtype(7), Dtype(8), Dtype(-5), Dtype(1), Dtype(-9), Dtype(-8), 
-      Dtype(-1), Dtype(-9), Dtype(-10), Dtype(0), Dtype(-9), Dtype(-1), Dtype(-9), Dtype(-9), Dtype(-3), Dtype(-5), Dtype(-2), Dtype(8), Dtype(-9), Dtype(10), Dtype(-3), Dtype(-3), Dtype(3), Dtype(1), Dtype(5), Dtype(-5), 
-      Dtype(-5), Dtype(2), Dtype(10), Dtype(0), Dtype(-4), Dtype(6), Dtype(-7), Dtype(-3), Dtype(9), Dtype(-6), Dtype(-9), Dtype(-3), Dtype(4), Dtype(-1), Dtype(2), Dtype(0), Dtype(-9), Dtype(8), Dtype(-5), Dtype(5), 
-      Dtype(10), Dtype(7), Dtype(-8), Dtype(6), Dtype(-3), Dtype(8), Dtype(4), Dtype(-10), Dtype(-4), Dtype(-8), Dtype(8), Dtype(-4), Dtype(-3), Dtype(-2), Dtype(-3), Dtype(7), Dtype(-7), Dtype(-2), Dtype(1), Dtype(-2), 
-      Dtype(-1), Dtype(2), Dtype(6), Dtype(0), Dtype(-7), Dtype(-5), Dtype(2), Dtype(-3), Dtype(-4), Dtype(-3), Dtype(-6), Dtype(0), Dtype(4), Dtype(-2), Dtype(-4), Dtype(-2), Dtype(-7), Dtype(-9), Dtype(6), Dtype(-6), 
-      Dtype(0), Dtype(-10), Dtype(1), Dtype(-6), Dtype(-1), Dtype(-2), Dtype(6), Dtype(-1), Dtype(4), Dtype(4), Dtype(7), Dtype(2), Dtype(-2), Dtype(-4), Dtype(1), Dtype(2), Dtype(1), Dtype(2), Dtype(7), Dtype(-5), 
-      Dtype(5), Dtype(9), Dtype(-6), Dtype(4), Dtype(0), Dtype(-9), Dtype(6), Dtype(6), Dtype(-5), Dtype(-7), Dtype(4), Dtype(3), Dtype(4), Dtype(-10), Dtype(8), Dtype(-6), Dtype(-2), Dtype(2), Dtype(9), Dtype(-8), 
-      Dtype(9), Dtype(8), Dtype(7), Dtype(3), Dtype(7), Dtype(0), Dtype(9), Dtype(7), Dtype(-2), Dtype(8), Dtype(4), Dtype(-1), Dtype(-1), Dtype(-2), Dtype(-3), Dtype(5), Dtype(-8), Dtype(6), Dtype(1), Dtype(-9), 
-      Dtype(8), Dtype(-3), Dtype(0), Dtype(-4), Dtype(-4), Dtype(-8), Dtype(3), Dtype(-8), Dtype(-4), Dtype(4), Dtype(1), Dtype(-5), Dtype(-5), Dtype(-9), Dtype(-7), Dtype(-6), Dtype(8), Dtype(10), Dtype(-7), Dtype(-1), 
-      Dtype(-9), Dtype(-3), Dtype(-9), Dtype(-5), Dtype(2), Dtype(2), Dtype(-5), Dtype(-3), Dtype(-10), Dtype(-10), Dtype(0), Dtype(-2), Dtype(-7), Dtype(0), Dtype(2), Dtype(-3), Dtype(10), Dtype(0), Dtype(-7), Dtype(7), 
-      Dtype(-10), Dtype(1), Dtype(9), Dtype(-5), Dtype(-5), Dtype(-6), Dtype(-6), Dtype(5), Dtype(9), Dtype(-2), Dtype(-10), Dtype(-4), Dtype(8), Dtype(-8), Dtype(-5), Dtype(9), Dtype(7), Dtype(-6), Dtype(-5), Dtype(-5), 
-      Dtype(0), Dtype(1), Dtype(3), Dtype(-3), Dtype(8), Dtype(-5), Dtype(-8), Dtype(9), Dtype(-4), Dtype(-9), Dtype(6), Dtype(4), Dtype(-7), Dtype(-5), Dtype(5), Dtype(9), Dtype(1), Dtype(1), Dtype(-1), Dtype(6), 
-      Dtype(6), Dtype(-1), Dtype(-7), Dtype(-2), Dtype(1), Dtype(-8), Dtype(7), Dtype(8), Dtype(3), Dtype(1), Dtype(6), Dtype(-7), Dtype(9), Dtype(-9), Dtype(6), Dtype(8), Dtype(-4), Dtype(8), Dtype(-4), Dtype(-8), 
-      Dtype(-7), Dtype(-2), Dtype(-4), Dtype(4), Dtype(9), Dtype(2), Dtype(6), Dtype(-8), Dtype(8), Dtype(0), Dtype(4), Dtype(-1), Dtype(-4), Dtype(2), Dtype(0), Dtype(-2), Dtype(-6), Dtype(-2), Dtype(-2), Dtype(9), 
-      Dtype(-6), Dtype(10), Dtype(9), Dtype(-6), Dtype(-7), Dtype(-6), Dtype(1), Dtype(7), Dtype(1), Dtype(2), Dtype(-10), Dtype(10), Dtype(9), Dtype(-10), Dtype(-2), Dtype(7), Dtype(-7), Dtype(0), Dtype(0), Dtype(-6), 
-      Dtype(5), Dtype(-10), Dtype(-2), Dtype(5), Dtype(-3), Dtype(-1), Dtype(-5), Dtype(10), Dtype(9), Dtype(-4), Dtype(-3), Dtype(-4), Dtype(7), Dtype(6), Dtype(2), Dtype(5), Dtype(7), Dtype(-9), Dtype(4), Dtype(0), 
-      Dtype(-3), Dtype(-9), Dtype(-5), Dtype(1), Dtype(1), Dtype(-5), Dtype(7), Dtype(10), Dtype(-1), Dtype(3), Dtype(-8), Dtype(5), Dtype(-5), Dtype(2), Dtype(7), Dtype(-5), Dtype(-8), Dtype(2), Dtype(0), Dtype(-10), 
-      Dtype(7), Dtype(7), Dtype(-8), Dtype(-9), Dtype(-8), Dtype(9), Dtype(10), Dtype(-10), Dtype(4), Dtype(-1), Dtype(-3), Dtype(0), Dtype(1), Dtype(-6), Dtype(9), Dtype(-4), Dtype(3), Dtype(5), Dtype(0), Dtype(3), 
-      Dtype(1), Dtype(-3), Dtype(-6), Dtype(-3), Dtype(-4), Dtype(-1), Dtype(-8), Dtype(6), Dtype(9), Dtype(-3), Dtype(5), Dtype(-9), Dtype(-5), Dtype(-7), Dtype(9), Dtype(7), Dtype(2), Dtype(-3), Dtype(2), Dtype(-10), 
-      Dtype(-3), Dtype(2), Dtype(-6), Dtype(0), Dtype(-6), Dtype(-2), Dtype(-10), Dtype(1), Dtype(2), Dtype(-9), Dtype(-4), Dtype(-5), Dtype(-10), Dtype(-1), Dtype(-9), Dtype(1), Dtype(-2), Dtype(7), Dtype(-4), Dtype(7)
-
+    Dtype feature1_data[324] = {
+      Dtype(-9), Dtype(-5), Dtype(0), Dtype(6), Dtype(8), Dtype(-2), Dtype(7), Dtype(-3), Dtype(7), Dtype(-10), Dtype(-2), Dtype(5), Dtype(-1), Dtype(0), Dtype(-4), Dtype(8), Dtype(7), Dtype(7), 
+      Dtype(-1), Dtype(7), Dtype(1), Dtype(6), Dtype(8), Dtype(3), Dtype(5), Dtype(9), Dtype(-9), Dtype(4), Dtype(1), Dtype(10), Dtype(-4), Dtype(-4), Dtype(-6), Dtype(-8), Dtype(-4), Dtype(3), 
+      Dtype(1), Dtype(9), Dtype(0), Dtype(1), Dtype(-8), Dtype(-6), Dtype(-2), Dtype(-1), Dtype(-10), Dtype(-7), Dtype(-2), Dtype(-9), Dtype(4), Dtype(-9), Dtype(6), Dtype(2), Dtype(9), Dtype(5), 
+      Dtype(3), Dtype(-3), Dtype(1), Dtype(-3), Dtype(-2), Dtype(0), Dtype(-3), Dtype(5), Dtype(6), Dtype(-1), Dtype(4), Dtype(5), Dtype(9), Dtype(1), Dtype(5), Dtype(6), Dtype(3), Dtype(-10), 
+      Dtype(0), Dtype(7), Dtype(1), Dtype(-3), Dtype(-9), Dtype(0), Dtype(8), Dtype(-5), Dtype(6), Dtype(5), Dtype(-6), Dtype(6), Dtype(1), Dtype(10), Dtype(5), Dtype(-9), Dtype(-3), Dtype(4), 
+      Dtype(9), Dtype(5), Dtype(3), Dtype(10), Dtype(10), Dtype(9), Dtype(-10), Dtype(-5), Dtype(2), Dtype(9), Dtype(-10), Dtype(-4), Dtype(8), Dtype(1), Dtype(-5), Dtype(8), Dtype(9), Dtype(-9), 
+      Dtype(-5), Dtype(8), Dtype(-3), Dtype(7), Dtype(3), Dtype(4), Dtype(-4), Dtype(4), Dtype(-2), Dtype(-3), Dtype(-3), Dtype(-4), Dtype(1), Dtype(1), Dtype(-5), Dtype(1), Dtype(5), Dtype(-8), 
+      Dtype(8), Dtype(6), Dtype(0), Dtype(6), Dtype(-7), Dtype(-10), Dtype(3), Dtype(-5), Dtype(3), Dtype(4), Dtype(6), Dtype(-2), Dtype(3), Dtype(-8), Dtype(-10), Dtype(-10), Dtype(0), Dtype(-8), 
+      Dtype(-8), Dtype(-5), Dtype(1), Dtype(4), Dtype(2), Dtype(-7), Dtype(0), Dtype(8), Dtype(1), Dtype(8), Dtype(6), Dtype(-6), Dtype(9), Dtype(9), Dtype(4), Dtype(4), Dtype(5), Dtype(4), 
+      Dtype(-6), Dtype(-3), Dtype(9), Dtype(9), Dtype(-7), Dtype(-9), Dtype(-5), Dtype(-1), Dtype(3), Dtype(-10), Dtype(4), Dtype(4), Dtype(10), Dtype(0), Dtype(9), Dtype(0), Dtype(-8), Dtype(-8), 
+      Dtype(-3), Dtype(-1), Dtype(-1), Dtype(-7), Dtype(1), Dtype(3), Dtype(-5), Dtype(0), Dtype(5), Dtype(-4), Dtype(7), Dtype(9), Dtype(-3), Dtype(-1), Dtype(10), Dtype(5), Dtype(1), Dtype(0), 
+      Dtype(8), Dtype(-1), Dtype(7), Dtype(-4), Dtype(-1), Dtype(-5), Dtype(-4), Dtype(3), Dtype(10), Dtype(-4), Dtype(-5), Dtype(3), Dtype(8), Dtype(-3), Dtype(-9), Dtype(6), Dtype(-7), Dtype(7), 
+      Dtype(-8), Dtype(-9), Dtype(5), Dtype(3), Dtype(-1), Dtype(3), Dtype(-8), Dtype(3), Dtype(2), Dtype(-6), Dtype(8), Dtype(6), Dtype(4), Dtype(-6), Dtype(-9), Dtype(4), Dtype(9), Dtype(-4), 
+      Dtype(-6), Dtype(-3), Dtype(-3), Dtype(3), Dtype(-8), Dtype(-6), Dtype(-9), Dtype(-3), Dtype(-7), Dtype(-7), Dtype(6), Dtype(-1), Dtype(-3), Dtype(-6), Dtype(-7), Dtype(2), Dtype(2), Dtype(-2), 
+      Dtype(-4), Dtype(4), Dtype(2), Dtype(-2), Dtype(-9), Dtype(-9), Dtype(-9), Dtype(10), Dtype(-7), Dtype(5), Dtype(4), Dtype(-9), Dtype(-5), Dtype(6), Dtype(-3), Dtype(-3), Dtype(-9), Dtype(-2), 
+      Dtype(-8), Dtype(7), Dtype(9), Dtype(-4), Dtype(1), Dtype(-3), Dtype(4), Dtype(6), Dtype(8), Dtype(-9), Dtype(-7), Dtype(4), Dtype(5), Dtype(7), Dtype(4), Dtype(7), Dtype(7), Dtype(4), 
+      Dtype(4), Dtype(7), Dtype(-7), Dtype(-6), Dtype(-2), Dtype(-2), Dtype(0), Dtype(8), Dtype(-4), Dtype(3), Dtype(-6), Dtype(10), Dtype(-3), Dtype(3), Dtype(2), Dtype(-2), Dtype(-3), Dtype(-2), 
+      Dtype(2), Dtype(1), Dtype(-3), Dtype(-6), Dtype(-10), Dtype(7), Dtype(-7), Dtype(-4), Dtype(5), Dtype(-9), Dtype(-6), Dtype(-2), Dtype(2), Dtype(6), Dtype(10), Dtype(7), Dtype(1), Dtype(5)
     };
 		      
+    Dtype feature2_data[64] = {
+      Dtype(10), Dtype(2), Dtype(-1), Dtype(-6), Dtype(-2), Dtype(-7), Dtype(-6), Dtype(9), 
+      Dtype(-10), Dtype(7), Dtype(3), Dtype(0), Dtype(5), Dtype(-6), Dtype(-8), Dtype(-7), 
+      Dtype(-6), Dtype(7), Dtype(6), Dtype(4), Dtype(4), Dtype(3), Dtype(6), Dtype(9), 
+      Dtype(3), Dtype(-2), Dtype(6), Dtype(-3), Dtype(4), Dtype(5), Dtype(-3), Dtype(-10), 
+      Dtype(9), Dtype(-6), Dtype(-3), Dtype(-10), Dtype(1), Dtype(-2), Dtype(-8), Dtype(4), 
+      Dtype(1), Dtype(-10), Dtype(0), Dtype(0), Dtype(0), Dtype(-10), Dtype(-10), Dtype(5), 
+      Dtype(1), Dtype(-2), Dtype(1), Dtype(3), Dtype(8), Dtype(6), Dtype(-3), Dtype(-10), 
+      Dtype(-6), Dtype(7), Dtype(-6), Dtype(2), Dtype(5), Dtype(-8), Dtype(-9), Dtype(6) 
+    }
     for (int i = 0; i < blob_bottom_gt->count(); ++i){ 
       blob_bottom_gt->mutable_cpu_data()[i] = landmark_gt[i];
     }
@@ -199,17 +142,20 @@ class PatchSemanticLayerTest : public MultiDeviceTest<TypeParam> {
       blob_bottom_pre->mutable_cpu_data()[i] = landmark_pre[i];
     }
 
-    for (int i = 0; i < blob_bottom_feature->count(); ++i){
-      blob_bottom_feature->mutable_cpu_data()[i] = feature_data[i%400];
+    for (int i = 0; i < blob_bottom_feature1->count(); ++i){
+      blob_bottom_feature->mutable_cpu_data()[i] = feature_data[i%324];
     }
-   
+    for (int i = 0; i < blob_bottom_feature2->count(); ++i){
+      blob_bottom_feature->mutable_cpu_data()[i] = feature_data[i%64];
+    }
     blob_bottom_vec.push_back(blob_bottom_gt);
     blob_bottom_vec.push_back(blob_bottom_pre);
-    blob_bottom_vec.push_back(blob_bottom_feature);
+    blob_bottom_vec.push_back(blob_bottom_feature1);
+    blob_bottom_vec.push_back(blob_bottom_feature2);
     blob_top_vec.push_back(blob_top);
 
     // 
-    LayerParameter layer_param,param;
+    LayerParameter layer_param;
     PatchSemanticParameter* patch_param = 
         layer_param.mutable_patch_semantic_param();
     patch_param->set_num_landmark(5);
@@ -218,20 +164,26 @@ class PatchSemanticLayerTest : public MultiDeviceTest<TypeParam> {
     patch_param->set_patch_w(2);
     patch_param->set_patch_h(2);
 
-    SpatialOperationParameter* sp_param = param.mutable_spatial_operation_param();
-    sp_param->set_kernel_size(2);
-    sp_param->set_name("test");
-    sp_param->set_used(true);
-
-    patch_param->add_spatial_operation_param(&sp_param);
+    SpatialOperationParameter* sp_param1 = patch_param->add_spatial_operation_param();
+    sp_param1->set_kernel_size(3);
+    sp_param1->set_stride(1);
+    sp_param1->set_weight(0.4);
+    sp_param1->set_name("sp1");
+    sp_param1->set_used(true);
+    SpatialOperationParameter* sp_param2 = patch_param->add_spatial_operation_param();
+    sp_param2->set_kernel_size(4);
+    sp_param2->set_stride(2);
+    sp_param2->set_weight(0.6);
+    sp_param2->set_name("sp2");
+    sp_param2->set_used(true);
 
     PatchSemanticLayer<Dtype> layer_weight(layer_param);
     layer_weight.SetUp(blob_bottom_vec, blob_top_vec);
     layer_weight.Forward(blob_bottom_vec, blob_top_vec);
     
-    const Dtype expected_Ex[10] = {Dtype(4.0), Dtype(-2.0),Dtype(5.25), Dtype(4.0),Dtype(-3.25), Dtype(1.5),Dtype(-7.75), Dtype(6.5),Dtype(-7.0), Dtype(-1.0)};
-    const Dtype expected_Ey[10] = {Dtype(2.0), Dtype(-0.5),Dtype(1.75), Dtype(6.0),Dtype(-4.75), Dtype(6.0),Dtype(4.75), Dtype(-5.5),Dtype(-1.0), Dtype(-4.5)};
-    const Dtype expected_Et[10] = {Dtype(5.0), Dtype(-8.0),Dtype(-1.25), Dtype(-1.5),Dtype(0.75), Dtype(-3.0),Dtype(-1.25), Dtype(2.5),Dtype(5.0), Dtype(1.0)};
+    const Dtype expected_Ex[10] = {Dtype(1.6), Dtype(-0.5), Dtype(-0.25), Dtype(-3.4), Dtype(-3.4), Dtype(-3.45), Dtype(-0.55), Dtype(1.3), Dtype(-4.5), Dtype(2.65)};
+    const Dtype expected_Ey[10] = {Dtype(-1.2), Dtype(-1.8), Dtype(-2.85), Dtype(-0.4), Dtype(-3.7), Dtype(0.85), Dtype(5.65), Dtype(4.5), Dtype(2.4), Dtype(-2.45)};
+    const Dtype expected_Et[10] = {Dtype(-0.2), Dtype(-1.8), Dtype(-1.55), Dtype(-0.6), Dtype(0.7), Dtype(-3.15), Dtype(0.85), Dtype(3.1), Dtype(0.1), Dtype(-0.55)};
     const Dtype error_margin = 1e-2;
     for (int b = 0; b < 2; ++b) {
       for (int l = 0; l < 5; ++l) {
@@ -286,7 +238,8 @@ class PatchSemanticLayerTest : public MultiDeviceTest<TypeParam> {
   
   Blob<Dtype>* const blob_bottom_gt_;
   Blob<Dtype>* const blob_bottom_pre_;
-  Blob<Dtype>* const blob_bottom_feature_;
+  Blob<Dtype>* const blob_bottom_feature1_;
+  Blob<Dtype>* const blob_bottom_feature2_;
   Blob<Dtype>* const blob_top_;
   vector<Blob<Dtype>*> blob_bottom_vec_;
   vector<Blob<Dtype>*> blob_top_vec_;
